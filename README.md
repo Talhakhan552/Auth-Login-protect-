@@ -98,9 +98,8 @@ curl -i http://localhost:8000/protected/profile \
 
 Visit `http://localhost:8000/docs`, click **Authorize**, paste your access token, and use **Try it out** on any protected route directly from the browser.
 
-![Swagger UI with Authorize padlock](Screenshot)
+![Swagger UI with Authorize padlock](Screenshot.png)
 
-*(Replace the image above with your own screenshot showing the lock icons and a successful authorized request.)*
 
 ## Project structure
 
