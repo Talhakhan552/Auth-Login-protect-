@@ -1,6 +1,7 @@
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from supabase_client import supabase
+from fastapi import Header, HTTPException
 
 app = FastAPI(title="FlyRank Auth API")
 
@@ -32,3 +33,18 @@ def login(body: AuthBody):
         }
     except Exception:
         raise HTTPException(status_code=401, detail="Invalid login credentials")
+
+
+@app.get("/public/info")
+def public_info():
+    return {"message": "Welcome stranger! This info is public."}
+
+
+
+@app.get("/protected/profile")
+def profile(authorization: str = Header(None)):
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Access token required")
+
+    token = authorization.split(" ")[1]
+    return {"message": "token received", "token": token}
