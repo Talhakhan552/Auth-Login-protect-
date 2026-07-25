@@ -1,13 +1,20 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Depends
 from pydantic import BaseModel
 from supabase_client import supabase
-from fastapi import Header, HTTPException
+from auth import get_current_user
 
 app = FastAPI(title="FlyRank Auth API")
+
 
 class AuthBody(BaseModel):
     email: str = None
     password: str = None
+
+
+@app.get("/")
+def root():
+    return {"message": "Server running and connected to Supabase"}
+
 
 @app.post("/auth/signup", status_code=201)
 def signup(body: AuthBody):
@@ -18,6 +25,7 @@ def signup(body: AuthBody):
         return result.user
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
+
 
 @app.post("/auth/login")
 def login(body: AuthBody):
@@ -35,29 +43,26 @@ def login(body: AuthBody):
         raise HTTPException(status_code=401, detail="Invalid login credentials")
 
 
+@app.post("/auth/logout", status_code=204)
+def logout(user=Depends(get_current_user)):
+    supabase.auth.sign_out()
+    return
+
+
 @app.get("/public/info")
 def public_info():
     return {"message": "Welcome stranger! This info is public."}
 
 
 @app.get("/protected/profile")
-def profile(authorization: str = Header(None)):
-    if not authorization or not authorization.startswith("Bearer "):
-        raise HTTPException(status_code=401, detail="Access token required")
+def profile(user=Depends(get_current_user)):
+    return {
+        "id": user.id,
+        "email": user.email,
+        "created_at": user.created_at,
+    }
 
-    token = authorization.split(" ")[1]
 
-    try:
-        user_response = supabase.auth.get_user(token)
-        user = user_response.user
-        if not user:
-            raise HTTPException(status_code=401, detail="Invalid or expired token")
-        return {
-            "id": user.id,
-            "email": user.email,
-            "created_at": user.created_at,
-        }
-    except HTTPException:
-        raise
-    except Exception:
-        raise HTTPException(status_code=401, detail="Invalid or expired token")     
+@app.get("/protected/dashboard")
+def dashboard(user=Depends(get_current_user)):
+    return {"message": f"Welcome to your dashboard, {user.email}"}
