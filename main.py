@@ -40,11 +40,24 @@ def public_info():
     return {"message": "Welcome stranger! This info is public."}
 
 
-
 @app.get("/protected/profile")
 def profile(authorization: str = Header(None)):
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="Access token required")
 
     token = authorization.split(" ")[1]
-    return {"message": "token received", "token": token}
+
+    try:
+        user_response = supabase.auth.get_user(token)
+        user = user_response.user
+        if not user:
+            raise HTTPException(status_code=401, detail="Invalid or expired token")
+        return {
+            "id": user.id,
+            "email": user.email,
+            "created_at": user.created_at,
+        }
+    except HTTPException:
+        raise
+    except Exception:
+        raise HTTPException(status_code=401, detail="Invalid or expired token")     
